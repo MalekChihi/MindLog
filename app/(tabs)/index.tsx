@@ -1,75 +1,240 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import React, { useState } from 'react';
+import {
+  Dimensions,
+  FlatList,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+// --- Data for Cards ---
+const workOnTodayData = [
+  {
+    id: '1',
+    title: 'Journal',
+    image: require('../../assets/images/journal.jpg'),
+    bgColor: '#D6E4FF',
+    textColor: '#3A506B',
+    route: '/journal',
+  },
+  {
+    id: '2',
+    title: 'Chatbot',
+    image: require('../../assets/images/chatbot.jpg'),
+    bgColor: '#FFE9D6',
+    textColor: '#6B4F3A',
+    route: '/chatbot',
+  },
+  {
+    id: '3',
+    title: 'Stories',
+    image: require('../../assets/images/stories.jpg'),
+    bgColor: '#D6FFD6',
+    textColor: '#3A6B3A',
+    route: '/stories',
+  },
+];
 
-export default function HomeScreen() {
+const moodEmojis = [
+  { id: 'happy', emoji: '😄', label: 'Happy' },
+  { id: 'good', emoji: '😊', label: 'Good' },
+  { id: 'okay', emoji: '😐', label: 'Okay' },
+  { id: 'sad', emoji: '😟', label: 'Sad' },
+  { id: 'awful', emoji: '😢', label: 'Awful' },
+];
+
+const { width } = Dimensions.get('window');
+const CARD_MARGIN = 16;
+const NUM_COLUMNS = 2;
+const CARD_WIDTH = (width - CARD_MARGIN * (NUM_COLUMNS + 1)) / NUM_COLUMNS;
+
+export default function DashboardScreen() {
+  const [userName, setUserName] = useState('Malek');
+  const [selectedMood, setSelectedMood] = useState<string | null>(null);
+
+  const openDrawer = () => {
+    console.log('Open Drawer');
+    // router.push('/menu');
+  };
+
+  const viewProfile = () => {
+    console.log('View Profile');
+    router.push('/(tabs)/profile');
+  };
+
+  const seeAllWorkOn = () => {
+    console.log('See All Work On');
+    // router.push('/work-on-categories');
+  };
+
+  const handleCardPress = (item: typeof workOnTodayData[0]) => {
+    console.log('Pressed:', item.title);
+    if (item.route) {
+      router.push(item.route);
+    } else {
+      console.warn('No route defined for', item.title);
+    }
+  };
+
+  const handleMoodSelect = (moodId: string) => {
+    setSelectedMood(moodId);
+    console.log('Mood selected:', moodId);
+  };
+
+  const renderWorkOnItem = ({ item }: { item: typeof workOnTodayData[0] }) => (
+    <TouchableOpacity
+      style={[styles.card, { backgroundColor: item.bgColor, width: CARD_WIDTH }]}
+      onPress={() => handleCardPress(item)}
+    >
+      <Image source={item.image} style={styles.cardImage} resizeMode="contain" />
+      <Text style={[styles.cardTitle, { color: item.textColor }]}>{item.title}</Text>
+    </TouchableOpacity>
+  );
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
+    <View style={styles.safeArea}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <View style={styles.topBar}>
+          <TouchableOpacity onPress={openDrawer}>
+            <Feather name="menu" size={28} color="#333" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={viewProfile}>
+            <Image
+              source={{ uri: 'https://randomuser.me/api/portraits/women/44.jpg' }}
+              style={styles.profilePic}
+            />
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.greetingHeader}>Hello {userName}</Text>
+        <Text style={styles.greetingSubheader}>How are you feeling today?</Text>
+
+        <View style={styles.moodTrackerContainer}>
+          {moodEmojis.map((mood) => (
+            <TouchableOpacity
+              key={mood.id}
+              style={[
+                styles.moodEmojiButton,
+                selectedMood === mood.id && styles.moodEmojiSelected,
+              ]}
+              onPress={() => handleMoodSelect(mood.id)}
+            >
+              <Text style={styles.moodEmojiText}>{mood.emoji}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <View style={styles.sectionHeaderContainer}>
+          <Text style={styles.sectionTitle}>What do you want to work on today?</Text>
+          <TouchableOpacity onPress={seeAllWorkOn}>
+            <Text style={styles.seeAllText}>See all</Text>
+          </TouchableOpacity>
+        </View>
+
+        <FlatList
+          data={workOnTodayData}
+          renderItem={renderWorkOnItem}
+          keyExtractor={(item) => item.id}
+          numColumns={NUM_COLUMNS}
+          columnWrapperStyle={styles.row}
+          scrollEnabled={false}
+          contentContainerStyle={{ paddingBottom: 20 }}
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F4F7FD',
+  },
+  container: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  topBar: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 8,
+    paddingTop: 20,
+    marginBottom: 20,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  profilePic: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  greetingHeader: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: '#2C3E50',
+    marginBottom: 4,
+  },
+  greetingSubheader: {
+    fontSize: 16,
+    color: '#7F8C8D',
+    marginBottom: 25,
+  },
+  moodTrackerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    backgroundColor: '#E8F5E9',
+    borderRadius: 25,
+    paddingVertical: 15,
+    paddingHorizontal: 10,
+    marginBottom: 30,
+  },
+  moodEmojiButton: {
+    padding: 8,
+    borderRadius: 20,
+  },
+  moodEmojiSelected: {
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+  },
+  moodEmojiText: {
+    fontSize: 28,
+  },
+  sectionHeaderContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#2C3E50',
+  },
+  seeAllText: {
+    fontSize: 14,
+    color: '#3498DB',
+    fontWeight: '500',
+  },
+  row: {
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  card: {
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  cardImage: {
+    width: 100,
+    height: 100,
+    marginBottom: 10,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
