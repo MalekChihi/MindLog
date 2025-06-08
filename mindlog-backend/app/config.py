@@ -9,7 +9,7 @@ class Config:
     # Database configuration
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         "DATABASE_URL", 
-        "postgresql://postgres:gestura@localhost:5432/mindlog"
+        "mysql+pymysql://root:Azertymysql2.@localhost:3306/mindlog"
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 

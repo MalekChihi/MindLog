@@ -10,18 +10,13 @@ import {
   View,
   ScrollView,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
 
 export default function SignInScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-
-  // Mock user database (just for demo)
-  const mockUsers = [
-    { email: 'user@example.com', password: 'password123' },
-    // add more mock users here if needed
-  ];
 
   const handleSignIn = async () => {
   if (!email || !password) {
@@ -56,9 +51,16 @@ export default function SignInScreen() {
 
     console.log('Login successful:', data);
 
-    // Optional: Save token to secure storage (recommended)
-    // await SecureStore.setItemAsync('access_token', data.access_token);
+    // Sauvegarde de l'access_token (si tu en as besoin)
+    await AsyncStorage.setItem('access_token', data.access_token);
 
+    // Sauvegarde de l'objet utilisateur complet (avec nom, email, etc.)
+    // Assure-toi que le backend renvoie bien le nom dans data.name
+    await AsyncStorage.setItem('user', JSON.stringify(data.user || data)); 
+    // data.user si backend renvoie { user: { name, email, ... }, access_token }
+    // sinon juste data si backend renvoie directement { name, email, access_token }
+
+    // Navigue vers l'écran principal
     router.replace('/(tabs)');
   } catch (error) {
     console.error('Login error:', error);

@@ -1,34 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import { Feather, FontAwesome5, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as ImagePicker from 'expo-image-picker';
+import { router } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  ScrollView,
-  TouchableOpacity,
-  FlatList,
   Alert,
-  Platform, // For platform-specific actions or permissions
+  FlatList,
+  Image,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { Link, useLocalSearchParams, router } from 'expo-router';
-import { FontAwesome5, MaterialCommunityIcons, Ionicons, Feather } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker'; // Import ImagePicker
-// import * as Progress from 'react-native-progress';
 
-// --- Mock Data ---
-const MOCK_USER_INITIAL = {
-  name: 'Alia', // Changed from Malek to match previous context
-  // profilePicUrl will be managed by profileImageUri state or a default
-};
+const MOCK_USER_INITIAL = {};
 
-const DEFAULT_PROFILE_PIC = 'https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg'; // A generic default
+const DEFAULT_PROFILE_PIC =
+  'https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg';
 
 const MOCK_BADGES = [
   { id: '1', name: 'Mindful Starter', icon: 'brain', color: '#FFD700', dateEarned: 'Oct 10' },
   { id: '2', name: '7-Day Streak', icon: 'calendar-check', color: '#4CAF50', dateEarned: 'Oct 17' },
   { id: '3', name: 'Journal Pro', icon: 'pencil-alt', color: '#2196F3', dateEarned: 'Oct 20' },
   { id: '4', name: 'Zen Master', icon: 'spa', color: '#9C27B0', dateEarned: 'Nov 01' },
-  { id: '5', name: 'Early Riser', icon: 'sun', color: '#FF9800', dateEarned: 'Nov 05'},
+  { id: '5', name: 'Early Riser', icon: 'sun', color: '#FF9800', dateEarned: 'Nov 05' },
 ];
 
 const MOCK_SLEEP_AIDS = [
@@ -48,28 +45,29 @@ const moodMap: { [key: string]: { emoji: string; label: string } } = {
 
 export default function ProfileScreen() {
   const [user, setUser] = useState(MOCK_USER_INITIAL);
-  const [profileImageUri, setProfileImageUri] = useState<string | null>(null); // For selected image
+  const [profileImageUri, setProfileImageUri] = useState<string | null>(null);
   const [badges, setBadges] = useState(MOCK_BADGES);
   const [sleepAids, setSleepAids] = useState(MOCK_SLEEP_AIDS);
   const [currentMood, setCurrentMood] = useState<{ emoji: string; label: string } | null>(null);
 
   useEffect(() => {
-    // Fetch initial profile image (e.g., from user preferences/backend)
-    // For now, we'll use a default or let it be null until picked
-    // setProfileImageUri(userFromBackend.profilePicUrl || DEFAULT_PROFILE_PIC);
-
-    const fetchSavedMood = async () => {
-      const savedMoodIdFromStorage = 'good';
-      if (savedMoodIdFromStorage && moodMap[savedMoodIdFromStorage]) {
-        setCurrentMood(moodMap[savedMoodIdFromStorage]);
-      } else {
-        setCurrentMood(null);
+  const fetchUserData = async () => {
+    try {
+      const storedUser = await AsyncStorage.getItem('user');
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        setUser((prev) => ({ ...prev, name: parsedUser.name || prev.name }));
+        if (parsedUser.profilePicUrl) {
+          setProfileImageUri(parsedUser.profilePicUrl);
+        }
       }
-    };
-    fetchSavedMood();
-  }, []);
+    } catch (error) {
+      console.error('Error loading user data:', error);
+    }
+  };
+  fetchUserData();
+}, []);
 
-  // --- Image Picker Functions ---
   const requestPermissions = async () => {
     if (Platform.OS !== 'web') {
       const galleryStatus = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -78,27 +76,25 @@ export default function ProfileScreen() {
         Alert.alert('Permissions required', 'Sorry, we need camera and gallery permissions to make this work!');
         return false;
       }
-      return true;
     }
-    return true; // Web doesn't need explicit permission requests this way usually
+    return true;
   };
 
   const pickImageFromGallery = async () => {
     const hasPermission = await requestPermissions();
     if (!hasPermission) return;
 
-    let result = await ImagePicker.launchImageLibraryAsync({
+    const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      aspect: [1, 1], // Square aspect ratio for profile pics
-      quality: 0.5, // Compress image slightly
+      aspect: [1, 1],
+      quality: 0.5,
     });
 
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      setProfileImageUri(result.assets[0].uri);
-      // Here you would typically upload result.assets[0].uri to your backend
-      // and update the user's profilePicUrl there.
-      console.log('Image picked from gallery:', result.assets[0].uri);
+    if (!result.canceled && result.assets?.length > 0) {
+      const imageUri = result.assets[0].uri;
+      setProfileImageUri(imageUri);
+      console.log('Image picked from gallery:', imageUri);
     }
   };
 
@@ -106,68 +102,51 @@ export default function ProfileScreen() {
     const hasPermission = await requestPermissions();
     if (!hasPermission) return;
 
-    let result = await ImagePicker.launchCameraAsync({
+    const result = await ImagePicker.launchCameraAsync({
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.5,
     });
 
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      setProfileImageUri(result.assets[0].uri);
-      // Upload logic here
-      console.log('Photo taken:', result.assets[0].uri);
+    if (!result.canceled && result.assets?.length > 0) {
+      const imageUri = result.assets[0].uri;
+      setProfileImageUri(imageUri);
+      console.log('Photo taken:', imageUri);
     }
   };
 
   const showImagePickerOptions = () => {
-    Alert.alert(
-      "Change Profile Picture",
-      "Choose an option",
-      [
-        { text: "Choose from Gallery", onPress: pickImageFromGallery },
-        { text: "Take Photo", onPress: takePhotoWithCamera },
-        { text: "Cancel", style: "cancel" }
-      ]
-    );
+    Alert.alert('Change Profile Picture', 'Choose an option', [
+      { text: 'Choose from Gallery', onPress: pickImageFromGallery },
+      { text: 'Take Photo', onPress: takePhotoWithCamera },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   };
 
-  // --- Sleep Aid Actions ---
   const handleSleepAidPress = (action: string, name: string) => {
     if (action === 'show_blue_light_tip') {
-      Alert.alert(
-        "Limit Blue Light Exposure",
-        "Tips to reduce blue light before sleep:\n\n" +
-        "1. Use 'Night Mode' or blue light filter settings on your devices.\n" +
-        "2. Avoid screens (phone, TV, computer) 1-2 hours before bed.\n" +
-        "3. If using screens, dim the brightness.\n" +
-        "4. Consider blue light blocking glasses in the evening.\n" +
-        "5. Opt for warm, dim lighting in your bedroom.",
-        [{ text: "Got it!" }]
-      );
+      Alert.alert('Limit Blue Light Exposure', 'Tips to reduce blue light before sleep...');
     } else if (action === 'navigate_meditation') {
-      // router.push('/meditation-player'); // Example
-      Alert.alert("Guided Meditation", `Opening meditation for: ${name}`);
+      Alert.alert('Guided Meditation', `Opening meditation for: ${name}`);
     } else {
-      Alert.alert("Sleep Tip", `Information about: ${name}`);
+      Alert.alert('Sleep Tip', `Information about: ${name}`);
     }
   };
-
 
   const renderBadgeItem = ({ item }: { item: typeof MOCK_BADGES[0] }) => (
     <View style={styles.badgeItemContainer}>
       <View style={[styles.badgeIconCircle, { backgroundColor: `${item.color}30` }]}>
         <FontAwesome5 name={item.icon as any} size={24} color={item.color} />
       </View>
-      <Text style={styles.badgeName} numberOfLines={1}>{item.name}</Text>
+      <Text style={styles.badgeName} numberOfLines={1}>
+        {item.name}
+      </Text>
       <Text style={styles.badgeDate}>{item.dateEarned}</Text>
     </View>
   );
 
-  const renderSleepAidItem = ({ item }: { item: (typeof MOCK_SLEEP_AIDS[0]) }) => (
-    <TouchableOpacity 
-        style={styles.sleepAidItem} 
-        onPress={() => handleSleepAidPress(item.action, item.name)}
-    >
+  const renderSleepAidItem = ({ item }: { item: typeof MOCK_SLEEP_AIDS[0] }) => (
+    <TouchableOpacity style={styles.sleepAidItem} onPress={() => handleSleepAidPress(item.action, item.name)}>
       <View style={styles.sleepAidIconContainer}>
         <MaterialCommunityIcons name={item.icon as any} size={22} color="#58A6FF" />
       </View>
@@ -180,15 +159,12 @@ export default function ProfileScreen() {
     <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
       <View style={styles.header}>
         <TouchableOpacity onPress={showImagePickerOptions} style={styles.profileImageContainer}>
-          <Image 
-            source={{ uri: profileImageUri || DEFAULT_PROFILE_PIC }} 
-            style={styles.profileImage} 
-          />
+          <Image source={{ uri: profileImageUri || DEFAULT_PROFILE_PIC }} style={styles.profileImage} />
           <View style={styles.editIconOverlay}>
             <Feather name="edit-2" size={14} color="#fff" />
           </View>
         </TouchableOpacity>
-        <Text style={styles.userName}>{user.name}</Text>
+        <Text style={styles.userName}>{user.name || 'User'}</Text>
         {currentMood ? (
           <View style={styles.moodDisplay}>
             <Text style={styles.moodEmoji}>{currentMood.emoji}</Text>
@@ -199,7 +175,6 @@ export default function ProfileScreen() {
         )}
       </View>
 
-      {/* --- Progress Section (Example) --- */}
       <View style={styles.sectionContainer}>
         <Text style={styles.sectionTitle}>Your Wellness Journey</Text>
         <View style={styles.progressContainer}>
@@ -213,11 +188,10 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      {/* --- Badges Section --- */}
       <View style={styles.sectionContainer}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Achievements</Text>
-          <TouchableOpacity onPress={() => console.log("See all badges")}>
+          <TouchableOpacity onPress={() => console.log('See all badges')}>
             <Text style={styles.seeAllText}>See All</Text>
           </TouchableOpacity>
         </View>
@@ -231,39 +205,34 @@ export default function ProfileScreen() {
         />
       </View>
 
-      {/* --- Sleep Disorder Aids Section --- */}
       <View style={styles.sectionContainer}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Sleep Support</Text>
         </View>
-        {sleepAids.slice(0,3).map(item => renderSleepAidItem({ item, key: item.id }))} 
+        {sleepAids.slice(0, 3).map((item) => renderSleepAidItem({ item }))}
         {sleepAids.length > 3 && (
-            <TouchableOpacity style={styles.seeMoreSleepAids} onPress={() => console.log("See all sleep aids")}>
-                <Text style={styles.seeMoreSleepAidsText}>View All Sleep Resources</Text>
-            </TouchableOpacity>
+          <TouchableOpacity style={styles.seeMoreSleepAids} onPress={() => console.log('See all sleep aids')}>
+            <Text style={styles.seeMoreSleepAidsText}>View All Sleep Resources</Text>
+          </TouchableOpacity>
         )}
       </View>
 
-      {/* --- Footer Actions --- */}
       <View style={styles.footerActions}>
-        <TouchableOpacity 
-            style={styles.actionButton} 
-            onPress={() => router.push('./more')}
-        >
+        <TouchableOpacity style={styles.actionButton} onPress={() => router.push('./more')}>
           <Feather name="settings" size={20} color="#4A5568" style={styles.actionButtonIcon} />
           <Text style={styles.actionButtonText}>App Settings</Text>
         </TouchableOpacity>
-        <TouchableOpacity 
-            style={[styles.actionButton, styles.logoutButton]} 
-            onPress={() => {
-                Alert.alert("Logout", "Are you sure you want to log out?", [
-                    { text: "Cancel", style: "cancel" },
-                    { text: "Logout", onPress: () => {router.replace('/sign-in')} } 
-                ]);
-            }}
+        <TouchableOpacity
+          style={[styles.actionButton, styles.logoutButton]}
+          onPress={() => {
+            Alert.alert('Logout', 'Are you sure you want to log out?', [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Logout', onPress: () => router.replace('/sign-in') },
+            ]);
+          }}
         >
-            <Feather name="log-out" size={20} color="#EF4444" style={styles.actionButtonIcon}/>
-            <Text style={[styles.actionButtonText, styles.logoutButtonText]}>Logout</Text>
+          <Feather name="log-out" size={20} color="#EF4444" style={styles.actionButtonIcon} />
+          <Text style={[styles.actionButtonText, styles.logoutButtonText]}>Logout</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
