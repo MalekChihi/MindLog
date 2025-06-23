@@ -3,7 +3,6 @@ import Checkbox from 'expo-checkbox';
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import {
-  Alert,
   Image,
   Pressable,
   ScrollView,
@@ -12,9 +11,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-
 const BACKEND_URL = 'http://localhost:5000'; // Change to your actual backend URL
-
 export default function SignUpScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -22,37 +19,31 @@ export default function SignUpScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [loading, setLoading] = useState(false);
-
+  const [errorMessage, setErrorMessage] = useState('');
   const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-
   const handleSignUp = async () => {
+    setErrorMessage('');
     if (!name || !email || !password || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all fields');
+      setErrorMessage('Please fill in all fields');
       return;
     }
-
     if (!isValidEmail(email)) {
-      Alert.alert('Invalid Email', 'Please enter a valid email address');
+      setErrorMessage('Please enter a valid email address');
       return;
     }
-
     if (password.length < 8) {
-      Alert.alert('Weak Password', 'Password must be at least 8 characters long');
+      setErrorMessage('Password must be at least 8 characters long');
       return;
     }
-
     if (password !== confirmPassword) {
-      Alert.alert('Mismatch', 'Passwords do not match');
+      setErrorMessage('Passwords do not match');
       return;
     }
-
     if (!agreeToTerms) {
-      Alert.alert('Terms', 'You must agree to the terms and conditions');
+      setErrorMessage('You must agree to the terms and conditions');
       return;
     }
-
     setLoading(true);
-
     try {
       const response = await fetch(`${BACKEND_URL}/api/signup`, {
         method: 'POST',
@@ -60,28 +51,28 @@ export default function SignUpScreen() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: name,
+          name,
           email,
           password,
           terms_accepted: true,
         }),
       });
-
       const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.message || 'Sign up failed');
+        if (data.message === 'User already exists') {
+          setErrorMessage('An account with this email already exists.');
+        } else {
+          setErrorMessage(data.message || 'Sign up failed');
+        }
+        return;
       }
-
-      Alert.alert('Success', 'Account created successfully!');
       router.replace('/(tabs)');
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to create account.');
+      setErrorMessage(error.message || 'Failed to create account.');
     } finally {
       setLoading(false);
     }
   };
-
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
       <View style={styles.container}>
@@ -90,10 +81,8 @@ export default function SignUpScreen() {
           style={styles.image}
           resizeMode="contain"
         />
-
         <Text style={styles.title}>Sign Up</Text>
         <Text style={styles.subtitle}>Create a new account</Text>
-
         <View style={styles.inputContainer}>
           <FontAwesome name="user" size={20} color="#888" style={styles.icon} />
           <TextInput
@@ -104,7 +93,6 @@ export default function SignUpScreen() {
             placeholderTextColor="#888"
           />
         </View>
-
         <View style={styles.inputContainer}>
           <MaterialIcons name="email" size={20} color="#888" style={styles.icon} />
           <TextInput
@@ -117,7 +105,6 @@ export default function SignUpScreen() {
             placeholderTextColor="#888"
           />
         </View>
-
         <View style={styles.inputContainer}>
           <FontAwesome name="lock" size={20} color="#888" style={styles.icon} />
           <TextInput
@@ -129,7 +116,6 @@ export default function SignUpScreen() {
             placeholderTextColor="#888"
           />
         </View>
-
         <View style={styles.inputContainer}>
           <FontAwesome name="lock" size={20} color="#888" style={styles.icon} />
           <TextInput
@@ -141,16 +127,15 @@ export default function SignUpScreen() {
             placeholderTextColor="#888"
           />
         </View>
-
         <View style={styles.checkboxContainer}>
           <Checkbox
             value={agreeToTerms}
             onValueChange={setAgreeToTerms}
-            color={agreeToTerms ? '#3b82f6' : undefined}
+            color={agreeToTerms ? '#3B82F6' : undefined}
           />
           <Text style={styles.checkboxLabel}>I agree to terms and conditions</Text>
         </View>
-
+        {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
         <Pressable
           style={[styles.button, loading && styles.disabledButton]}
           onPress={handleSignUp}
@@ -160,7 +145,6 @@ export default function SignUpScreen() {
             {loading ? 'Creating Account...' : 'Create Account'}
           </Text>
         </Pressable>
-
         <View style={styles.loginContainer}>
           <Text style={styles.loginText}>Already have an account? </Text>
           <Link href="/sign-in" asChild>
@@ -173,12 +157,11 @@ export default function SignUpScreen() {
     </ScrollView>
   );
 }
-
 const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
+    backgroundColor: '#ffff',
     justifyContent: 'center',
-    backgroundColor: '#fff',
   },
   container: {
     padding: 24,
@@ -186,75 +169,97 @@ const styles = StyleSheet.create({
   },
   image: {
     width: 220,
-    height: 150,
-    marginBottom: 24,
+    height: 220,
+    marginBottom: 20,
+    borderRadius: 20,
   },
   title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: '#111',
+    fontSize: 30,
+    fontWeight: '800',
+    color: '#2C3E50',
+    marginBottom: 6,
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 16,
-    color: '#555',
+    fontSize: 18,
+    fontWeight: '500',
+    color: '#6C7B95',
     marginBottom: 24,
     textAlign: 'center',
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    width: '100%',
+    backgroundColor: '#fff',
+    borderColor: '#DCDDE1',
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-    borderRadius: 8,
-    paddingHorizontal: 12,
+    borderRadius: 14,
+    paddingHorizontal: 14,
     marginBottom: 16,
-    backgroundColor: '#f8fafc',
+    width: '100%',
+    height: 50,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   icon: {
-    marginRight: 8,
+    marginRight: 10,
   },
   input: {
     flex: 1,
-    height: 50,
-    color: '#000',
+    fontSize: 16,
+    color: '#2C3E50',
+  },
+  errorText: {
+    color: 'red',
+    marginBottom: 12,
+    textAlign: 'center',
   },
   checkboxContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
-    marginBottom: 24,
+    marginBottom: 16,
+    width: '100%',
   },
   checkboxLabel: {
     marginLeft: 8,
-    color: '#666',
+    color: '#2C3E50',
+    fontSize: 14,
+    flex: 1,
+    flexWrap: 'wrap',
   },
   button: {
-    width: '100%',
-    backgroundColor: '#3b82f6',
-    padding: 16,
-    borderRadius: 8,
+    backgroundColor: '#A29BFE',
+    paddingVertical: 16,
+    borderRadius: 16,
     alignItems: 'center',
+    width: '100%',
+    marginTop: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
   },
   disabledButton: {
-    backgroundColor: '#93c5fd',
+    backgroundColor: '#D6D4FF',
   },
   buttonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 16,
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
   },
   loginContainer: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 16,
+    marginTop: 24,
   },
   loginText: {
-    color: '#666',
+    color: '#7F8C8D',
+    fontSize: 16,
   },
   loginLink: {
-    color: '#3b82f6',
-    fontWeight: '600',
+    color: '#6C5CE7',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });

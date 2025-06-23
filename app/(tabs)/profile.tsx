@@ -164,7 +164,7 @@ export default function ProfileScreen() {
             <Feather name="edit-2" size={14} color="#fff" />
           </View>
         </TouchableOpacity>
-        <Text style={styles.userName}>{user.name || 'User'}</Text>
+        <Text style={styles.userName}>{user.name || 'MindLog'}</Text>
         {currentMood ? (
           <View style={styles.moodDisplay}>
             <Text style={styles.moodEmoji}>{currentMood.emoji}</Text>

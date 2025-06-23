@@ -1,27 +1,23 @@
 import { Link } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-
 export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <Image
-        source={require('../assets/images/signin.jpg')} // 🧠 illustration image
+        source={require('../assets/images/signin.jpg')}
         style={styles.topImage}
         resizeMode="contain"
       />
-
       <Text style={styles.title}>Welcome to MindLog</Text>
-      <Text style={styles.subtitle}>Take a step towards better sleep.</Text>
-      <Text style={styles.description}>We are here to support you on your</Text>
-      <Text style={styles.description}>journey to emotional well-being</Text>
-
+      <Text style={styles.subtitle}>Breathe. Sleep. Heal.</Text>
+      <Text style={styles.description}>We're here to support your</Text>
+      <Text style={styles.description}>emotional and sleep well-being.</Text>
       <View style={styles.buttonContainer}>
         <Link href="/sign-in" asChild>
           <Pressable style={styles.primaryButton}>
             <Text style={styles.buttonText}>Sign In</Text>
           </Pressable>
         </Link>
-
         <Link href="/sign-up" asChild>
           <Pressable style={styles.secondaryButton}>
             <Text style={[styles.buttonText, styles.secondaryButtonText]}>Sign Up</Text>
@@ -31,65 +27,69 @@ export default function HomeScreen() {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f1f5f9',
+    backgroundColor: '#fff',
     paddingHorizontal: 24,
   },
   topImage: {
-    width: 220,
-    height: 220,
-    marginBottom: 24,
+    width: 240,
+    height: 240,
+    marginBottom: 30,
+    borderRadius: 20,
   },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#1e293b',
-    marginBottom: 12,
+    fontSize: 34,
+    fontWeight: '800',
+    color: '#2C3E50', // deep blue-gray
+    marginBottom: 10,
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 20,
-    color: '#475569',
-    marginBottom: 6,
+    fontSize: 22,
+    color: '#6C7B95', // muted lavender-blue
+    marginBottom: 12,
     textAlign: 'center',
     fontWeight: '600',
   },
   description: {
     fontSize: 16,
-    color: '#64748b',
+    color: '#7F8C8D', // soft gray
     textAlign: 'center',
-    marginBottom: 2,
+    marginBottom: 4,
   },
   buttonContainer: {
     width: '100%',
-    marginTop: 40,
+    marginTop: 50,
   },
   primaryButton: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#A29BFE', // soft lavender
     paddingVertical: 18,
-    borderRadius: 12,
+    borderRadius: 16,
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
   },
   secondaryButton: {
     backgroundColor: 'transparent',
     paddingVertical: 18,
-    borderRadius: 12,
+    borderRadius: 16,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#3b82f6',
+    borderColor: '#A29BFE',
   },
   buttonText: {
     fontSize: 18,
-    fontWeight: '700',
-    color: 'white',
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
   secondaryButtonText: {
-    color: '#3b82f6',
+    color: '#6C5CE7',
   },
 });

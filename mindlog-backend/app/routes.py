@@ -1,15 +1,27 @@
 from flask import Blueprint, request, jsonify, current_app
 from app import db
-from app.models import User
+from app.models import User, ChatHistory
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from . import story_generator, journal_analyzer
+import datetime
+import base64
+from . import gamification_analyzer # <-- IMPORT THE NEW MODULE
+import base64
+from app.journal_analyzer import analyze_mood_entry  # 
+from flask import request, jsonify, current_app
+from flask_jwt_extended import jwt_required
+from PIL import Image
+import io
 
 # --- BLUEPRINT DEFINITIONS ---
-# Blueprint for all authentication-related routes
 auth_bp = Blueprint('auth', __name__)
-
-# Blueprint for all chatbot-related routes
 chat_bp = Blueprint('chat', __name__)
+story_bp = Blueprint('story', __name__)
+journal_bp = Blueprint('journal', __name__)
+gamification_bp = Blueprint('gamification', __name__)
 
+# Initialize gamification generator
+# gamification = GamificationGenerator()
 
 # --- AUTHENTICATION ROUTES (under auth_bp) ---
 
@@ -76,3 +88,66 @@ def chat_with_gemini():
     except Exception as e:
         current_app.logger.error(f"Gemini API call failed: {e}")
         return jsonify({"error": "Failed to get response from AI model"}), 500
+
+@story_bp.route("/generate-story", methods=['POST'])
+def generate_story_route():
+    data = request.get_json()
+    if not data or 'theme' not in data or 'user_words' not in data:
+        return jsonify({"error": "Missing 'theme' or 'user_words' in request"}), 400
+
+    theme = data.get('theme')
+    user_words = data.get('user_words')
+    current_app.logger.info(f"Received story request with theme: {theme} and words: {user_words}")
+
+    try:
+        # Call the main function from our new module
+        result = story_generator.create_story_assets(theme, user_words)
+        
+        # Return the dictionary it provides
+        return jsonify(result), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Story generation failed: {e}")
+        return jsonify({"error": "An internal error occurred while generating the story."}), 500
+
+@journal_bp.route('/analyze', methods=['POST'])
+def analyze_journal():
+    data = request.get_json()
+    mood_text = data.get('entry')
+
+    if not mood_text:
+        return jsonify({"error": "No mood entry provided."}), 400
+
+    result = analyze_mood_entry(mood_text)
+
+    if "error" in result:
+        return jsonify(result), 500
+
+    return jsonify(result), 200
+
+@gamification_bp.route("/detect-mood", methods=['POST'])
+@jwt_required()
+def detect_mood_route():
+    try:
+        data = request.get_json(force=True)  # <- force=True forcera le parsing même sans header correct
+    except Exception as e:
+        current_app.logger.error(f"JSON parsing failed: {e}")
+        return jsonify({"error": "Invalid JSON payload."}), 400
+
+    base64_image_data = data.get('image_data') if data else None
+    if not base64_image_data:
+        return jsonify({"error": "No image_data provided"}), 400
+
+    try:
+        image_bytes = base64.b64decode(base64_image_data)
+        detected_mood = gamification_analyzer.get_mood_from_image(image_bytes)
+        activity_suggestion = gamification_analyzer.suggest_activity_for_mood(detected_mood)
+
+        return jsonify({
+            "mood": detected_mood,
+            "activity_suggestion": activity_suggestion
+        }), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Mood detection route failed: {e}")
+        return jsonify({"error": "An internal error occurred during mood detection."}), 500

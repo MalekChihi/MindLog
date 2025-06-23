@@ -7,10 +7,13 @@ load_dotenv()
 
 class Config:
     # Database configuration
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
-        "DATABASE_URL", 
-        "mysql+pymysql://root:Azertymysql2.@localhost:3306/mindlog"
-    )
+    # SQLALCHEMY_DATABASE_URI = os.environ.get(
+    #     "DATABASE_URL", 
+    #     "mysql+pymysql://root:Azertymysql2.@localhost:3306/mindlog"
+    # )
+    # SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URI')
+    
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # Security configuration
@@ -38,7 +41,7 @@ class Config:
     UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
 ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif'}
 MAX_CONTENT_LENGTH = 5 * 1024 * 1024  # 5MB limit
-BASE_URL = 'http://192.168.1.17:5000'  # Change to your actual domain
+BASE_URL = 'http://192.168.80.35:5000'  
 
 class DevelopmentConfig(Config):
     DEBUG = True
